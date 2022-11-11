@@ -1,11 +1,11 @@
+import heapq
 import json
 import math
 import os
 import pickle
 import re
 import sys
-import heapq
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
 from time import perf_counter
 from typing import Dict, List
 
@@ -56,13 +56,13 @@ def build_index(root_dir: str) -> None:
 
     offload_index()
 
+    offload_index()
+
     file_name = f"storage/url_map/urls.pickle"
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
     with open(file_name, "wb") as f:
         pickle.dump(doc_id_to_url, f, protocol=pickle.HIGHEST_PROTOCOL)
-
-    doc_id_to_url.clear()
 
 def tokenize(text_content: str) -> Dict[str, int]:
     ret = defaultdict(int)
@@ -83,11 +83,11 @@ def offload_index() -> None:
     global index
     global disk_index
 
-    file_name = f"storage/partial{disk_index}.pickle"
+    file_name = f"storage/partial_index{disk_index}.pickle"
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
     with open(file_name, "wb") as f:
-        pickle.dump(index, f, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(OrderedDict(sorted(index.items())), f, protocol=pickle.HIGHEST_PROTOCOL)
 
     index.clear()
     disk_index += 1
@@ -156,11 +156,26 @@ def merge_files():
 
 def main():
     t_start = perf_counter()
+
     build_index(DATA_URLS)
     merge_files()
     print("Number of indexed: " + str(number_of_indexed()) + '\n')
     print("Unique Tokens: " + str(unique_tokens()) + '\n')
     print("Index size: " + str(get_index_size(STORAGE)) + '\n')
+    
+    ''' example code for ordered dict serialization
+    dict1 = {"z": 1, "b": 3, "a": 1, "as": 2, "bb": 1, "asdf": 1, "xcv": 1}
+
+    with open("tmp.pickel", "wb") as f:
+        pickle.dump(OrderedDict(sorted(dict1.items())), f, protocol=pickle.HIGHEST_PROTOCOL)
+    
+    with open("tmp.pickel", "rb") as f:
+        tmp = dict(pickle.load(f)) 
+    
+    print(dict1)
+    print(tmp)
+    '''
+
     t_end = perf_counter()
     print(t_end - t_start)
 
