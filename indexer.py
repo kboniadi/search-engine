@@ -1,6 +1,8 @@
 import json
 import os
+import pickle
 import re
+import sys
 from collections import defaultdict
 from time import perf_counter
 from typing import Dict, List
@@ -8,19 +10,22 @@ from typing import Dict, List
 from bs4 import BeautifulSoup
 from nltk.stem import PorterStemmer
 
-DATA_URLS = "DEV"
+from posting import Posting
 
+DATA_URLS = "DEV"
+MAX_SIZE = 10000000 #10MB
+
+disk_index = 0
 doc_id = 0
-index_indexer = {}
+doc_id_to_url = {}
 stemmer = PorterStemmer()
 
-def crawl():
-    pass
+index: Dict[str, List[Posting]] = defaultdict(list)
 
-def generate_posting(root_dir: str) -> None:
+def build_index(root_dir: str) -> None:
     global doc_id
 
-    for (root, dirs, files) in os.walk(root_dir, topdown=True):
+    for (root, _, files) in os.walk(root_dir, topdown=True):
         for file in files:
             if not file.lower().endswith("json"):
                 continue
@@ -29,12 +34,17 @@ def generate_posting(root_dir: str) -> None:
             data_url = data["url"]
             data_content = data["content"]
 
-            index_indexer[doc_id] = data_url
+            doc_id_to_url[doc_id] = data_url
+            
             soup = BeautifulSoup(data_content, "lxml")
 
             # tokenize here
             tokens = tokenize(soup.get_text())
             # add frequencies
+            add_meta_data(doc_id, tokens)
+
+            if(sys.getsizeof(index) > MAX_SIZE):
+                offload_index()
             doc_id += 1
 
 def tokenize(text_content: str) -> Dict[str, int]:
@@ -48,9 +58,25 @@ def tokenize(text_content: str) -> Dict[str, int]:
         ret[token] += 1
     return ret
 
+def add_meta_data(doc_id: int, tokens: Dict[str, int]):
+    for token, freq in tokens.items():
+        index[token].append(Posting(doc_id, freq))
+
+def offload_index():
+    global index
+    global disk_index
+
+    file_name = f"storage/partial{disk_index}.pickle"
+
+    with open(file_name, "wb") as f:
+        pickle.dump(index, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    index.clear()
+    disk_index += 1
+
 def main():
     t_start = perf_counter()
-    generate_posting(DATA_URLS)
+    build_index(DATA_URLS)
     t_end = perf_counter()
     print(t_start - t_end)
 
