@@ -1,9 +1,9 @@
-from typing import List
 from __future__ import annotations
+from typing import List
 
 
 class Posting:
-    def __init__(self, docid: int, tfidf: int, fields: List[str], positions: List[str]):
+    def __init__(self, docid: int, tfidf: int, fields: List[str] = None, positions: List[str] = None):
         self.docid = docid
         self.tfidf = tfidf # use freq counts for now
         self.fields = fields

@@ -14,7 +14,7 @@ from nltk.stem import PorterStemmer
 from posting import Posting
 
 DATA_URLS = "DEV"
-MAX_SIZE = 10000000 #10MB
+MAX_SIZE = 5000000 #5MB
 
 disk_index = 0
 doc_id = 0
@@ -68,6 +68,7 @@ def offload_index():
     global disk_index
 
     file_name = f"storage/partial{disk_index}.pickle"
+    os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
     with open(file_name, "wb") as f:
         pickle.dump(index, f, protocol=pickle.HIGHEST_PROTOCOL)
@@ -76,14 +77,14 @@ def offload_index():
     disk_index += 1
 
 #analysis question #1
-def numberOfIndexed():
+def number_of_indexed():
     count = 0
     for postings in index.values():
         count += len(postings)
     return count
 
 #analysis question #2
-def uniqueTokens():
+def unique_tokens():
     return len(index)
 
 def main():
