@@ -91,7 +91,7 @@ def main():
     t_start = perf_counter()
     build_index(DATA_URLS)
     t_end = perf_counter()
-    print(t_start - t_end)
+    print(t_end - t_start)
 
 if __name__ == "__main__":
     main()
