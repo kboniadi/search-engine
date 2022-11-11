@@ -75,6 +75,17 @@ def offload_index():
     index.clear()
     disk_index += 1
 
+#analysis question #1
+def numberOfIndexed():
+    count = 0
+    for postings in index.values():
+        count += len(postings)
+    return count
+
+#analysis question #2
+def uniqueTokens():
+    return len(index)
+
 def main():
     t_start = perf_counter()
     build_index(DATA_URLS)
