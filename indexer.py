@@ -32,7 +32,7 @@ def build_index(root_dir: str) -> None:
     global doc_id
     global doc_id_to_url
 
-    for (root, _, files) in os.walk(root_dir, topdown=True):
+    for (root, _, files) in os.walk(root_dir):
         for file in files:
             if not file.lower().endswith("json"):
                 continue
@@ -67,7 +67,7 @@ def build_index(root_dir: str) -> None:
 def tokenize(text_content: str) -> Dict[str, int]:
     ret = defaultdict(int)
 
-    for token in re.findall(r'[a-zA-Z0-9]+', text_content):
+    for token in re.findall(r'[a-zA-Z0-9]+', text_content.lower()):
         token = stemmer.stem(token)
 
         if not token:
@@ -104,7 +104,7 @@ def unique_tokens() -> int:
 def get_index_size(root_dir: str) -> str:
     count = 0
 
-    for (root, _, files) in os.walk(root_dir, topdown=True):
+    for (root, _, files) in os.walk(root_dir):
         for file in files:
             count += os.stat(os.path.join(root, file)).st_size
     return convert_size(count, "KB")
@@ -162,6 +162,24 @@ def main():
     print("Number of indexed: " + str(number_of_indexed()) + '\n')
     print("Unique Tokens: " + str(unique_tokens()) + '\n')
     print("Index size: " + str(get_index_size(STORAGE)) + '\n')
+    
+    # file_name = f"storage/partial_index{0}.pickle"
+    # os.makedirs(os.path.dirname(file_name), exist_ok=True)
+
+    # with open(file_name, "rb") as f:
+    #     index: Dict[str, List[Posting]] = defaultdict(list, pickle.load(f))
+
+    # file_name = f"storage/url_map/urls.pickle"
+    # os.makedirs(os.path.dirname(file_name), exist_ok=True)
+
+    # with open(file_name, "rb") as f:
+    #     doc_id_to_url: Dict[int, str] = defaultdict(str, pickle.load(f))
+
+    # print(len(index["uci"]))
+    # print(doc_id_to_url[2])
+    # for posting in index["uci"]:
+    #     if posting.docid == 2:
+    #         print(posting.tfidf)
     
     ''' example code for ordered dict serialization
     dict1 = {"z": 1, "b": 3, "a": 1, "as": 2, "bb": 1, "asdf": 1, "xcv": 1}
