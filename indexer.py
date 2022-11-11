@@ -1,11 +1,11 @@
+import heapq
 import json
 import math
 import os
 import pickle
 import re
 import sys
-import heapq
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
 from time import perf_counter
 from typing import Dict, List
 
@@ -83,7 +83,7 @@ def offload_index() -> None:
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
     with open(file_name, "wb") as f:
-        pickle.dump(index, f, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(OrderedDict(sorted(index.items())), f, protocol=pickle.HIGHEST_PROTOCOL)
 
     index.clear()
     disk_index += 1
@@ -126,6 +126,20 @@ def convert_size(size_bytes, unit="B"):
 def main():
     t_start = perf_counter()
     # build_index(DATA_URLS)
+    
+    ''' example code for ordered dict serialization
+    dict1 = {"z": 1, "b": 3, "a": 1, "as": 2, "bb": 1, "asdf": 1, "xcv": 1}
+
+    with open("tmp.pickel", "wb") as f:
+        pickle.dump(OrderedDict(sorted(dict1.items())), f, protocol=pickle.HIGHEST_PROTOCOL)
+    
+    with open("tmp.pickel", "rb") as f:
+        tmp = dict(pickle.load(f)) 
+    
+    print(dict1)
+    print(tmp)
+    '''
+
     t_end = perf_counter()
     print(t_end - t_start)
 
