@@ -79,7 +79,7 @@ def offload_index() -> None:
     global index
     global disk_index
 
-    file_name = f"storage/partial{disk_index}.pickle"
+    file_name = f"storage/partial_index{disk_index}.pickle"
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
     with open(file_name, "wb") as f:
