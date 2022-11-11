@@ -56,8 +56,6 @@ def build_index(root_dir: str) -> None:
 
     offload_index()
 
-    offload_index()
-
     file_name = f"storage/url_map/urls.pickle"
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
