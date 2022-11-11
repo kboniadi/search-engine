@@ -3,6 +3,7 @@ import os
 import pickle
 import re
 import sys
+import heapq
 from collections import defaultdict
 from time import perf_counter
 from typing import Dict, List
@@ -60,7 +61,7 @@ def tokenize(text_content: str) -> Dict[str, int]:
 
 def add_meta_data(doc_id: int, tokens: Dict[str, int]):
     for token, freq in tokens.items():
-        index[token].append(Posting(doc_id, freq))
+        heapq.heappush(index[token], Posting(doc_id, freq))
 
 def offload_index():
     global index
