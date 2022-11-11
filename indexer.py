@@ -1,4 +1,5 @@
 import json
+import math
 import os
 import pickle
 import re
@@ -14,6 +15,7 @@ from nltk.stem import PorterStemmer
 from posting import Posting
 
 DATA_URLS = "DEV"
+STORAGE = "storage"
 MAX_SIZE = 5000000 #5MB
 
 disk_index = 0
@@ -69,11 +71,11 @@ def tokenize(text_content: str) -> Dict[str, int]:
         ret[token] += 1
     return ret
 
-def add_meta_data(doc_id: int, tokens: Dict[str, int]):
+def add_meta_data(doc_id: int, tokens: Dict[str, int]) -> None:
     for token, freq in tokens.items():
         heapq.heappush(index[token], Posting(doc_id, freq))
 
-def offload_index():
+def offload_index() -> None:
     global index
     global disk_index
 
@@ -86,25 +88,44 @@ def offload_index():
     index.clear()
     disk_index += 1
 
-#analysis question #1
-def number_of_indexed():
+# analysis question #1
+def number_of_indexed() -> int:
     count = 0
     for postings in index.values():
         count += len(postings)
     return count
 
-#analysis question #2
-def unique_tokens():
+# analysis question #2
+def unique_tokens() -> int:
     return len(index)
+
+# analysis question #3: The total size (in KB) of your index on disk
+def get_index_size(root_dir: str) -> str:
+    count = 0
+
+    for (root, _, files) in os.walk(root_dir, topdown=True):
+        for file in files:
+            count += os.stat(os.path.join(root, file)).st_size
+    return convert_size(count, "KB")
+
+def convert_size(size_bytes, unit="B"):
+    if size_bytes == 0:
+        return "0B"
+
+    size_name = {"B": 0, "KB": 1, "MB": 2, "GB": 3, "TB": 4, "PB": 5, "EB": 6, "ZB": 7, "YB": 8}
+
+    if unit not in size_name:
+        raise ValueError("Must select from \
+        ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB]")
+        
+    i = size_name[unit]
+    p = math.pow(1024, i)
+    s = round(size_bytes / p, 2)
+    return "%s %s" % (s, unit)
 
 def main():
     t_start = perf_counter()
     # build_index(DATA_URLS)
-    file_name = f"storage/partial{23}.pickle"
-    with open(file_name, "rb") as f:
-        index = pickle.load(f)
-    
-    print(index["MINYOUNG"])
     t_end = perf_counter()
     print(t_end - t_start)
 
