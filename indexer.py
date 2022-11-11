@@ -52,13 +52,13 @@ def build_index(root_dir: str) -> None:
             doc_id += 1
 
 
+    offload_index()
+
     file_name = f"storage/url_map/urls.pickle"
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
     with open(file_name, "wb") as f:
         pickle.dump(doc_id_to_url, f, protocol=pickle.HIGHEST_PROTOCOL)
-
-    doc_id_to_url.clear()
 
 def tokenize(text_content: str) -> Dict[str, int]:
     ret = defaultdict(int)
