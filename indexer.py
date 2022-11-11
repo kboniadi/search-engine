@@ -24,6 +24,9 @@ doc_id_to_url = {}
 stemmer = PorterStemmer()
 
 index: Dict[str, List[Posting]] = defaultdict(list)
+tempIndex: Dict[str, List[Posting]] = defaultdict(list)
+outFile = open("out.txt", "w")
+
 
 def build_index(root_dir: str) -> None:
     global doc_id
@@ -39,7 +42,7 @@ def build_index(root_dir: str) -> None:
             data_content = data["content"]
 
             doc_id_to_url[doc_id] = data_url
-            
+
             soup = BeautifulSoup(data_content, "lxml")
 
             # tokenize here
@@ -51,6 +54,7 @@ def build_index(root_dir: str) -> None:
                 offload_index()
             doc_id += 1
 
+    offload_index()
 
     file_name = f"storage/url_map/urls.pickle"
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
@@ -90,10 +94,7 @@ def offload_index() -> None:
 
 # analysis question #1
 def number_of_indexed() -> int:
-    count = 0
-    for postings in index.values():
-        count += len(postings)
-    return count
+    return doc_id
 
 # analysis question #2
 def unique_tokens() -> int:
@@ -123,9 +124,43 @@ def convert_size(size_bytes, unit="B"):
     s = round(size_bytes / p, 2)
     return "%s %s" % (s, unit)
 
+
+def merge_files():
+    global index
+    global tempIndex
+
+    #loading the first file
+    with open('storage/partial0.pickle', 'rb') as f:
+        index = pickle.load(f)  # Update contents of file0 to the dictionary
+
+    #goint thru all the files
+    for i in range(1, disk_index):
+        with open(f'storage/partial{i}.pickle', 'rb') as f:
+            tempIndex = pickle.load(f)  #getting the temp file
+
+            for key, value in tempIndex.items():
+                if(key in index):
+                    for j in value:
+                        heapq.heappush(index[key], j)  #Update contents of file1 to the dictionary
+                else:
+                    index[key] = value
+
+    # file_name = f"storage/index.pickle"
+    # os.makedirs(os.path.dirname(file_name), exist_ok=True)
+    #
+    # with open(file_name, "wb") as f:
+    #     pickle.dump(index, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    for k, v in index.items():
+        outFile.write(k + " - " + str(len(v)) + '\n')
+
 def main():
     t_start = perf_counter()
-    # build_index(DATA_URLS)
+    build_index(DATA_URLS)
+    merge_files()
+    print("Number of indexed: " + str(number_of_indexed()) + '\n')
+    print("Unique Tokens: " + str(unique_tokens()) + '\n')
+    print("Index size: " + str(get_index_size(STORAGE)) + '\n')
     t_end = perf_counter()
     print(t_end - t_start)
 
