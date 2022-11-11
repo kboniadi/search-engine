@@ -25,6 +25,7 @@ index: Dict[str, List[Posting]] = defaultdict(list)
 
 def build_index(root_dir: str) -> None:
     global doc_id
+    global doc_id_to_url
 
     for (root, _, files) in os.walk(root_dir, topdown=True):
         for file in files:
@@ -47,6 +48,15 @@ def build_index(root_dir: str) -> None:
             if(sys.getsizeof(index) > MAX_SIZE):
                 offload_index()
             doc_id += 1
+
+
+    file_name = f"storage/url_map/urls.pickle"
+    os.makedirs(os.path.dirname(file_name), exist_ok=True)
+
+    with open(file_name, "wb") as f:
+        pickle.dump(doc_id_to_url, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    doc_id_to_url.clear()
 
 def tokenize(text_content: str) -> Dict[str, int]:
     ret = defaultdict(int)
@@ -89,7 +99,12 @@ def unique_tokens():
 
 def main():
     t_start = perf_counter()
-    build_index(DATA_URLS)
+    # build_index(DATA_URLS)
+    file_name = f"storage/partial{23}.pickle"
+    with open(file_name, "rb") as f:
+        index = pickle.load(f)
+    
+    print(index["MINYOUNG"])
     t_end = perf_counter()
     print(t_end - t_start)
 
