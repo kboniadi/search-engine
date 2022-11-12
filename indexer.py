@@ -128,12 +128,12 @@ def merge_files():
     global tempIndex
 
     #loading the first file
-    with open('storage/partial0.pickle', 'rb') as f:
+    with open('storage/partial_index0.pickle', 'rb') as f:
         index = pickle.load(f)  # Update contents of file0 to the dictionary
 
     #goint thru all the files
     for i in range(1, disk_index):
-        with open(f'storage/partial{i}.pickle', 'rb') as f:
+        with open(f'storage/partial_index{i}.pickle', 'rb') as f:
             tempIndex = pickle.load(f)  #getting the temp file
 
             for key, value in tempIndex.items():
@@ -155,11 +155,11 @@ def merge_files():
 def main():
     t_start = perf_counter()
 
-    build_index(DATA_URLS)
-    merge_files()
-    print("Number of indexed: " + str(number_of_indexed()) + '\n')
-    print("Unique Tokens: " + str(unique_tokens()) + '\n')
-    print("Index size: " + str(get_index_size(STORAGE)) + '\n')
+    # build_index(DATA_URLS)
+    # merge_files()
+    # print("Number of indexed: " + str(number_of_indexed()) + '\n')
+    # print("Unique Tokens: " + str(unique_tokens()) + '\n')
+    # print("Index size: " + str(get_index_size(STORAGE)) + '\n')
     
     # file_name = f"storage/partial_index{0}.pickle"
     # os.makedirs(os.path.dirname(file_name), exist_ok=True)
