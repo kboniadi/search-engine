@@ -28,6 +28,52 @@ tempIndex: Dict[str, List[Posting]] = defaultdict(list)
 outFile = open("out.txt", "w")
 
 
+
+#also milestone #2
+#PROXIMITY CHECKING
+def checkQuery(searchList,count,i,checkLength, value):
+
+    if i == len(searchList):
+        return count == checkLength
+    for val in searchList[i]:
+        if val > value and val - value <= 5:
+            check = checkQuery(searchList, count+1,i+1,checkLength, val)
+            if check:
+                return True
+    return False
+        
+    
+
+
+#milestone #2
+def answerQuery():
+    query = input("Enter in a query: ")
+
+    print("Processing...\n")
+    queryTokenized = tokenize(query, True)
+    
+    queryList = set()
+
+    for val in queryTokenized:
+        for v in index[val]:
+            queryList.add(v)
+
+    for val in queryList:
+        if(val.getQueryCount() == len(queryTokenized)):
+           searchList = val.getCombo()
+
+           for value in searchList[0]:
+               if checkQuery(searchList, 1, 1, len(queryTokenized),value):
+                    print(doc_id_to_url[val.getID()])
+                    break
+           
+
+    
+        
+    
+    
+
+
 def build_index(root_dir: str) -> None:
     global doc_id
     global doc_id_to_url
@@ -46,7 +92,7 @@ def build_index(root_dir: str) -> None:
             soup = BeautifulSoup(data_content, "lxml")
 
             # tokenize here
-            tokens = tokenize(soup.get_text())
+            tokens = tokenize(soup.get_text(), False)
             # add frequencies
             add_meta_data(doc_id, tokens)
 
@@ -62,20 +108,29 @@ def build_index(root_dir: str) -> None:
     with open(file_name, "wb") as f:
         pickle.dump(doc_id_to_url, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-def tokenize(text_content: str) -> Dict[str, int]:
-    ret = defaultdict(int)
-
+def tokenize(text_content: str, askingQuery) -> Dict[str, int]:
+    ret = dict()
+    position = 1
+    queryget = []
     for token in re.findall(r'[a-zA-Z0-9]+', text_content.lower()):
         token = stemmer.stem(token)
 
-        if not token:
-            print("empty")
-        ret[token] += 1
-    return ret
+        if not askingQuery:
+            if not token:
+                print("empty")
+            if token not in ret:
+                ret[token] = [1, {position}]
+            else:
+                ret[token][0] += 1
+                ret[token][1].add(position)
+            position += 1
+        else:
+            queryget.append(token)
+    return ret if not askingQuery else queryget
 
 def add_meta_data(doc_id: int, tokens: Dict[str, int]) -> None:
-    for token, freq in tokens.items():
-        heapq.heappush(index[token], Posting(doc_id, freq))
+    for token, data in tokens.items():
+        heapq.heappush(index[token], Posting(doc_id, data[0],data[1]))
 
 def offload_index() -> None:
     global index
@@ -155,11 +210,11 @@ def merge_files():
 def main():
     t_start = perf_counter()
 
-    # build_index(DATA_URLS)
-    # merge_files()
-    # print("Number of indexed: " + str(number_of_indexed()) + '\n')
-    # print("Unique Tokens: " + str(unique_tokens()) + '\n')
-    # print("Index size: " + str(get_index_size(STORAGE)) + '\n')
+    build_index(DATA_URLS)
+    merge_files()
+    print("Number of indexed: " + str(number_of_indexed()) + '\n')
+    print("Unique Tokens: " + str(unique_tokens()) + '\n')
+    print("Index size: " + str(get_index_size(STORAGE)) + '\n')
     
     # file_name = f"storage/partial_index{0}.pickle"
     # os.makedirs(os.path.dirname(file_name), exist_ok=True)
@@ -181,7 +236,6 @@ def main():
     
     ''' example code for ordered dict serialization
     dict1 = {"z": 1, "b": 3, "a": 1, "as": 2, "bb": 1, "asdf": 1, "xcv": 1}
-
     with open("tmp.pickel", "wb") as f:
         pickle.dump(OrderedDict(sorted(dict1.items())), f, protocol=pickle.HIGHEST_PROTOCOL)
     
@@ -192,6 +246,7 @@ def main():
     print(tmp)
     '''
 
+    answerQuery()
     t_end = perf_counter()
     print(t_end - t_start)
 
