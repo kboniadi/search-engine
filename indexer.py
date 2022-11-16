@@ -49,7 +49,7 @@ def checkQuery(searchList,count,i,checkLength, value,ranking,minranking):
 #milestone #2
 def answerQuery():
     query = input("Enter in a query: ")
-
+    t_start = perf_counter()
     print("Processing...\n")
     queryTokenized = tokenize(query, True)
     
@@ -73,6 +73,7 @@ def answerQuery():
         if count == 5: break
         print(val[1])
         count += 1
+    return t_start
            
 
     
@@ -219,7 +220,7 @@ def main():
 
     build_index(DATA_URLS)
     merge_files()
-    t_start = perf_counter()
+    
     #print("Number of indexed: " + str(number_of_indexed()) + '\n')
     #print("Unique Tokens: " + str(unique_tokens()) + '\n')
     #print("Index size: " + str(get_index_size(STORAGE)) + '\n')
@@ -254,7 +255,7 @@ def main():
     print(tmp)
     '''
 
-    answerQuery()
+    t_start = answerQuery()
     t_end = perf_counter()
     print(t_end - t_start)
 
