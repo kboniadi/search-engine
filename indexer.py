@@ -65,7 +65,7 @@ def answerQuery():
            searchList = val.getCombo()
 
            for value in searchList[0]:
-               ranking = checkQuery(searchList, 1, 1, len(queryTokenized),value,0,1e8):
+               ranking = checkQuery(searchList, 1, 1, len(queryTokenized),value,0,1e8)
                heapq.heappush(retList, (ranking, doc_id_to_url[val.getID()]))
 
     count = 0
