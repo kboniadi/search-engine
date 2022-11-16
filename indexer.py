@@ -215,13 +215,14 @@ def merge_files():
         outFile.write(k + " - " + str(len(v)) + '\n')
 
 def main():
-    t_start = perf_counter()
+    
 
     build_index(DATA_URLS)
     merge_files()
-    print("Number of indexed: " + str(number_of_indexed()) + '\n')
-    print("Unique Tokens: " + str(unique_tokens()) + '\n')
-    print("Index size: " + str(get_index_size(STORAGE)) + '\n')
+    t_start = perf_counter()
+    #print("Number of indexed: " + str(number_of_indexed()) + '\n')
+    #print("Unique Tokens: " + str(unique_tokens()) + '\n')
+    #print("Index size: " + str(get_index_size(STORAGE)) + '\n')
     
     # file_name = f"storage/partial_index{0}.pickle"
     # os.makedirs(os.path.dirname(file_name), exist_ok=True)
