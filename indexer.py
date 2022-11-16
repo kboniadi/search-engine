@@ -31,16 +31,17 @@ outFile = open("out.txt", "w")
 
 #also milestone #2
 #PROXIMITY CHECKING
-def checkQuery(searchList,count,i,checkLength, value):
+def checkQuery(searchList,count,i,checkLength, value,ranking,minranking):
 
     if i == len(searchList):
-        return count == checkLength
+        if count == checkLength:
+            return min(ranking,minranking)
+        return minranking
     for val in searchList[i]:
         if val > value and val - value <= 5:
-            check = checkQuery(searchList, count+1,i+1,checkLength, val)
-            if check:
-                return True
-    return False
+            minranking = checkQuery(searchList, count+1,i+1,checkLength, val, ranking + val - value, minranking)
+      
+    return minranking
         
     
 
@@ -58,14 +59,20 @@ def answerQuery():
         for v in index[val]:
             queryList.add(v)
 
+    retList = []
     for val in queryList:
         if(val.getQueryCount() == len(queryTokenized)):
            searchList = val.getCombo()
 
            for value in searchList[0]:
-               if checkQuery(searchList, 1, 1, len(queryTokenized),value):
-                    print(doc_id_to_url[val.getID()])
-                    break
+               ranking = checkQuery(searchList, 1, 1, len(queryTokenized),value,0,1e8):
+               heapq.heappush(retList, (ranking, doc_id_to_url[val.getID()]))
+
+    count = 0
+    for val in retList:
+        if count == 5: break
+        print(val[1])
+        count += 1
            
 
     
