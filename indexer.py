@@ -254,10 +254,12 @@ def main():
     print(dict1)
     print(tmp)
     '''
-
-    t_start = answerQuery()
-    t_end = perf_counter()
-    print(t_end - t_start)
+    while True:
+        input1 = input("Get query? (Y/N): ")
+        if input1 == "N": return
+        t_start = answerQuery()
+        t_end = perf_counter()
+        print("Time took:", t_end - t_start)
 
 if __name__ == "__main__":
     main()
