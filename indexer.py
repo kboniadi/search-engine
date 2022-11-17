@@ -216,8 +216,11 @@ def merge_files():
 def main():
     
 
+    t_start = perf_counter()
     build_index(DATA_URLS)
     merge_files()
+    t_end = perf_counter()
+    print("Build took:", t_end-t_start)
     
     print("Number of indexed: " + str(number_of_indexed()) + '\n')
     print("Unique Tokens: " + str(unique_tokens()) + '\n')
