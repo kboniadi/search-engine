@@ -57,10 +57,11 @@ def answerQuery():
 
     for val in queryTokenized:
         with open("out.txt", 'rb') as f:
-            f.seek(bookKeeping[val])
-            checkGo = pickle.load(f)
-            for v in checkGo:
-                queryList.add(v)
+            if val in bookKeeping:
+                f.seek(bookKeeping[val])
+                checkGo = pickle.load(f)
+                for v in checkGo:
+                    queryList.add(v)
 
     retList = []
     for val in queryList:
@@ -69,7 +70,9 @@ def answerQuery():
 
            for value in searchList[0]:
                ranking = checkQuery(searchList, 1, 1, len(queryTokenized),value,0,1e8)
-               heapq.heappush(retList, (ranking, doc_id_to_url[val.getID()]))
+               if ranking != 1e8:
+                   heapq.heappush(retList, (ranking, doc_id_to_url[val.getID()]))
+                   break
 
     count = 0
     for val in retList:
