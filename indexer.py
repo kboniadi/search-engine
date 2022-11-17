@@ -5,7 +5,7 @@ import os
 import pickle
 import re
 import sys
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 from time import perf_counter
 from typing import Dict, List
 
@@ -25,8 +25,8 @@ stemmer = PorterStemmer()
 
 index: Dict[str, List[Posting]] = defaultdict(list)
 tempIndex: Dict[str, List[Posting]] = defaultdict(list)
-outFile = open("out.txt", "w")
 
+bookKeeping = defaultdict(int)
 
 
 #also milestone #2
@@ -56,8 +56,11 @@ def answerQuery():
     queryList = set()
 
     for val in queryTokenized:
-        for v in index[val]:
-            queryList.add(v)
+        with open("out.txt", 'rb') as f:
+            f.seek(bookKeeping[val])
+            checkGo = pickle.load(f)
+            for v in checkGo:
+                queryList.add(v)
 
     retList = []
     for val in queryList:
@@ -126,6 +129,8 @@ def tokenize(text_content: str, askingQuery) -> Dict[str, int]:
         if not askingQuery:
             if not token:
                 print("empty")
+            # add book keeper secondary index
+            bookKeeping[token] = -1
             if token not in ret:
                 ret[token] = [1, {position}]
             else:
@@ -138,7 +143,7 @@ def tokenize(text_content: str, askingQuery) -> Dict[str, int]:
 
 def add_meta_data(doc_id: int, tokens: Dict[str, int]) -> None:
     for token, data in tokens.items():
-        heapq.heappush(index[token], Posting(doc_id, data[0],data[1]))
+        index[token].append(Posting(doc_id, data[0],data[1]))
 
 def offload_index() -> None:
     global index
@@ -148,7 +153,7 @@ def offload_index() -> None:
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
     with open(file_name, "wb") as f:
-        pickle.dump(OrderedDict(sorted(index.items())), f, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(index, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     index.clear()
     disk_index += 1
@@ -159,7 +164,7 @@ def number_of_indexed() -> int:
 
 # analysis question #2
 def unique_tokens() -> int:
-    return len(index)
+    return len(bookKeeping)
 
 # analysis question #3: The total size (in KB) of your index on disk
 def get_index_size(root_dir: str) -> str:
@@ -189,31 +194,24 @@ def convert_size(size_bytes, unit="B"):
 def merge_files():
     global index
     global tempIndex
+    
 
-    #loading the first file
-    with open('storage/partial_index0.pickle', 'rb') as f:
-        index = pickle.load(f)  # Update contents of file0 to the dictionary
 
-    #goint thru all the files
-    for i in range(1, disk_index):
-        with open(f'storage/partial_index{i}.pickle', 'rb') as f:
-            tempIndex = pickle.load(f)  #getting the temp file
 
-            for key, value in tempIndex.items():
-                if(key in index):
-                    for j in value:
-                        heapq.heappush(index[key], j)  #Update contents of file1 to the dictionary
-                else:
-                    index[key] = value
+    with open("out.txt", "wb") as f:
+        
+        for val in bookKeeping:
+            currIndex = []
+            for i in range(disk_index):
+                with open(f'storage/partial_index{i}.pickle', 'rb') as f1:
+                    tempIndex = pickle.load(f1)  #getting the temp file
 
-    # file_name = f"storage/index.pickle"
-    # os.makedirs(os.path.dirname(file_name), exist_ok=True)
-    #
-    # with open(file_name, "wb") as f:
-    #     pickle.dump(index, f, protocol=pickle.HIGHEST_PROTOCOL)
-
-    for k, v in index.items():
-        outFile.write(k + " - " + str(len(v)) + '\n')
+                    if val in tempIndex:
+                        for v in tempIndex[val]:
+                            currIndex.append(v)
+            bookKeeping[val] = f.tell()
+            pickle.dump(currIndex, f, protocol=pickle.HIGHEST_PROTOCOL)         
+ 
 
 def main():
     
@@ -221,39 +219,11 @@ def main():
     build_index(DATA_URLS)
     merge_files()
     
-    #print("Number of indexed: " + str(number_of_indexed()) + '\n')
-    #print("Unique Tokens: " + str(unique_tokens()) + '\n')
-    #print("Index size: " + str(get_index_size(STORAGE)) + '\n')
+    print("Number of indexed: " + str(number_of_indexed()) + '\n')
+    print("Unique Tokens: " + str(unique_tokens()) + '\n')
+    print("Index size: " + str(get_index_size(STORAGE)) + '\n')
     
-    # file_name = f"storage/partial_index{0}.pickle"
-    # os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
-    # with open(file_name, "rb") as f:
-    #     index: Dict[str, List[Posting]] = defaultdict(list, pickle.load(f))
-
-    # file_name = f"storage/url_map/urls.pickle"
-    # os.makedirs(os.path.dirname(file_name), exist_ok=True)
-
-    # with open(file_name, "rb") as f:
-    #     doc_id_to_url: Dict[int, str] = defaultdict(str, pickle.load(f))
-
-    # print(len(index["uci"]))
-    # print(doc_id_to_url[2])
-    # for posting in index["uci"]:
-    #     if posting.docid == 2:
-    #         print(posting.tfidf)
-    
-    ''' example code for ordered dict serialization
-    dict1 = {"z": 1, "b": 3, "a": 1, "as": 2, "bb": 1, "asdf": 1, "xcv": 1}
-    with open("tmp.pickel", "wb") as f:
-        pickle.dump(OrderedDict(sorted(dict1.items())), f, protocol=pickle.HIGHEST_PROTOCOL)
-    
-    with open("tmp.pickel", "rb") as f:
-        tmp = dict(pickle.load(f)) 
-    
-    print(dict1)
-    print(tmp)
-    '''
     while True:
         input1 = input("Get query? (Y/N): ")
         if input1 == "N": return
