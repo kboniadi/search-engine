@@ -53,7 +53,7 @@ def answerQuery():
         getList = val.getAllCount()
         getQuer = val.getQueryList()
         for i in range(len(getList)):
-            total += (1 + math.log(getList[i]))*math.log(doc_id/getFreqs[getQuer[i]])
+            total += (1 + math.log10(getList[i]))*math.log10(doc_id/getFreqs[getQuer[i]])
         listQuery.append((-total, doc_id_to_url[val.getID()]))
 
     count = 0
