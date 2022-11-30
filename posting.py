@@ -3,42 +3,45 @@ from typing import List
 
 
 class Posting:
-    def __init__(self, docid: int, tfidf: int, positions,fields: List[str] = None):
+    def __init__(self, docid: int, count: int, term):
         self.docid = docid
-        self.tfidf = tfidf # use freq counts for now
-        self.fields = fields
-        self.positions = positions
-        self.combo = [positions]
-        self.queryCount = 1
+        self.count = count
+        self.term = term
+        self.allCount = [count]
+        self.queryList = [term]
     
     def __lt__(self, other: Posting):
         return self.docid < other.docid
 
     def __eq__(self, other):
         if self.docid == other.getID():
-            self.setCombo(other.getPos())
-            self.queryCount += 1
+            self.giveAllCount(other.getCount())
+            self.giveQueryList(other.getTerm())
             return True
         return False
-    
-    def setCombo(self, value):
-        self.combo.append(value)
-    
-    def getPos(self):
-        return self.positions
+
         
     def getID(self):
         return self.docid
+
+    def getTerm(self):
+        return self.term
+
+    def getCount(self):
+        return self.count
+
+    def giveAllCount(self, cnt):
+        self.allCount.append(cnt)
+
+    def giveQueryList(self,trm):
+        self.queryList.append(trm)
+
+    def getQueryList(self):
+        return self.queryList
+
+    def getAllCount(self):
+        return self.allCount
         
-    def getCombo(self):
-        x = list(self.combo)
-        self.combo = [self.getPos()]
-        return x
-    
-    def getQueryCount(self):
-        x = self.queryCount
-        self.queryCount = 1
-        return x
         
     def __hash__(self):
          return hash(self.getID())
