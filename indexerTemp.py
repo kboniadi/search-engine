@@ -25,21 +25,6 @@ stemmer = PorterStemmer()
 
 index: Dict[str, List[Posting]] = defaultdict(list)
 tempIndex: Dict[str, List[Posting]] = defaultdict(list)
-
-#also milestone #2
-#PROXIMITY CHECKING
-def checkQuery(searchList,count,i,checkLength, value,ranking,minranking):
-
-    if i == len(searchList):
-        if count == checkLength:
-            return min(ranking,minranking)
-        return minranking
-    for val in searchList[i]:
-        if val > value and val - value <= 5:
-            minranking = checkQuery(searchList, count+1,i+1,checkLength, val, ranking + val - value, minranking)
-      
-    return minranking
-        
     
 
 
@@ -52,25 +37,27 @@ def answerQuery():
     
     queryList = set()
 
+    getFreqs = defaultdict(int)
     for val in queryTokenized:
         if val in index:
+            getFreqs[val] = len(index[val])
             for v in index[val]:
                 queryList.add(v)
 
 
-    retList = []
-    for val in queryList:
-        if(val.getQueryCount() == len(queryTokenized)):
-           searchList = val.getCombo()
+    listQuery = []
 
-           for value in searchList[0]:
-               ranking = checkQuery(searchList, 1, 1, len(queryTokenized),value,0,1e8)
-               if ranking != 1e8:
-                   heapq.heappush(retList, (ranking, doc_id_to_url[val.getID()]))
-                   break
+
+    for val in queryList:
+        total = 0
+        getList = val.getAllCount()
+        getQuer = val.getQueryList()
+        for i in range(len(getList)):
+            total += (1 + math.log(getList[i]))*math.log(doc_id/getFreqs[getQuer[i]])
+        heapq.heappush(listQuery, (-total, doc_id_to_url[val.getID()]))
 
     count = 0
-    for val in retList:
+    for val in listQuery:
         if count == 5: break
         print(val[1])
         count += 1
@@ -114,8 +101,7 @@ def build_index(root_dir: str) -> None:
 
 
 def tokenize(text_content: str, askingQuery) -> Dict[str, int]:
-    ret = dict()
-    position = 1
+    ret = defaultdict(int)
     queryget = []
     for token in re.findall(r'[a-zA-Z0-9]+', text_content.lower()):
         token = stemmer.stem(token)
@@ -124,12 +110,7 @@ def tokenize(text_content: str, askingQuery) -> Dict[str, int]:
             if not token:
                 print("empty")
             # add book keeper secondary index
-            if token not in ret:
-                ret[token] = [1, {position}]
-            else:
-                ret[token][0] += 1
-                ret[token][1].add(position)
-            position += 1
+            ret[token] += 1
         else:
             queryget.append(token)
     return ret if not askingQuery else queryget
@@ -137,7 +118,7 @@ def tokenize(text_content: str, askingQuery) -> Dict[str, int]:
 
 def add_meta_data(doc_id: int, tokens: Dict[str, int]) -> None:
     for token, data in tokens.items():
-        heapq.heappush(index[token], Posting(doc_id, data[0], data[1]))
+        heapq.heappush(index[token], Posting(doc_id, data, token))
 
 
 def offload_index() -> None:
