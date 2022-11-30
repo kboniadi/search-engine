@@ -31,7 +31,7 @@ bookKeeping = defaultdict(int)
 offset = 0
 class MergeIndex(MRJob):
    def steps(self):
-        return[MRStep(mapper=self.mapper_index,reducer=self.reducer_index)]
+        return[MRStep(mapper=self.mapper_index)]
 
    def mapper_index(self, _, line):
        global offset
@@ -40,8 +40,6 @@ class MergeIndex(MRJob):
        offset += len(line)+2
        yield key, value
 
-   def reducer_index(self, key, values):
-       yield key, list(values)
 
 
 #milestone #2
