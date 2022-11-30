@@ -30,42 +30,33 @@ tempIndex: Dict[str, List[Posting]] = defaultdict(list)
 
 #milestone #2
 def answerQuery():
+    global doc_id
     query = input("Enter in a query: ")
     t_start = perf_counter()
     print("Processing...\n")
     queryTokenized = tokenize(query, True)
     
-    queryList = set()
 
-    getFreqs = defaultdict(int)
+
+
+
+
+    rankingScores = defaultdict(float)
+
     for val in queryTokenized:
         if val in index:
-            getFreqs[val] = len(index[val])
-            for v in index[val]:
-                queryList.add(v)
+            for posting in index[val]:
+                rankingScores[posting.getID()] += (1 + math.log10(posting.getCount()))*(math.log10(doc_id/len(index[val])))
 
-
-    listQuery = []
-
-
-    for val in queryList:
-        total = 0
-        getList = val.getAllCount()
-        if(len(getList) == len(queryTokenized)):
-            getQuer = val.getQueryList()
-            for i in range(len(getList)):
-                total += (1 + math.log10(getList[i]))*math.log10(doc_id/getFreqs[getQuer[i]])
-            listQuery.append((-total, doc_id_to_url[val.getID()]))
+    rankingScores = sorted(rankingScores, key = lambda x: -x)
 
     count = 0
-    listQuery = sorted(listQuery)
-    for i in range(len(listQuery)):
-        if count == 5:break
-        print(listQuery[i][1])
-        count+=1
-        
+                                                                                        
+    for val in rankingScores:
+       if count == 5: break
+       print(doc_id_to_url[val])
+       count += 1                                                                                
     return t_start
-
 
 def build_index(root_dir: str) -> None:
     global doc_id
@@ -121,7 +112,7 @@ def tokenize(text_content: str, askingQuery) -> Dict[str, int]:
 
 def add_meta_data(doc_id: int, tokens: Dict[str, int]) -> None:
     for token, data in tokens.items():
-        heapq.heappush(index[token], Posting(doc_id, data, token))
+        heapq.heappush(index[token], Posting(doc_id, data))
 
 
 def offload_index() -> None:
