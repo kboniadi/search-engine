@@ -51,10 +51,11 @@ def answerQuery():
     for val in queryList:
         total = 0
         getList = val.getAllCount()
-        getQuer = val.getQueryList()
-        for i in range(len(getList)):
-            total += (1 + math.log10(getList[i]))*math.log10(doc_id/getFreqs[getQuer[i]])
-        listQuery.append((-total, doc_id_to_url[val.getID()]))
+        if(len(getList) == len(queryTokenized)):
+            getQuer = val.getQueryList()
+            for i in range(len(getList)):
+                total += (1 + math.log10(getList[i]))*math.log10(doc_id/getFreqs[getQuer[i]])
+            listQuery.append((-total, doc_id_to_url[val.getID()]))
 
     count = 0
     listQuery = sorted(listQuery)
