@@ -30,15 +30,17 @@ bookKeeping = defaultdict(int)
 
 offset = 0
 class MergeIndex(MRJob):
-   def steps(self):
-        return[MRStep(mapper=self.mapper_index)]
 
-   def mapper_index(self, _, line):
+   def mapper(self, _, line):
        global offset
        key, value = line.split(",")
        bookKeeping[key] = offset
        offset += len(line)+2
        yield key, value
+
+   def reducer(self, key, values):
+      return None
+
 
 
 
@@ -181,7 +183,7 @@ def convert_size(size_bytes, unit="B"):
 
 def merge_files():
     global index
-    global tempIndex 
+    global tempIndex  
     
 
 
