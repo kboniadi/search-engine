@@ -54,13 +54,15 @@ def answerQuery():
         getQuer = val.getQueryList()
         for i in range(len(getList)):
             total += (1 + math.log(getList[i]))*math.log(doc_id/getFreqs[getQuer[i]])
-        heapq.heappush(listQuery, (-total, doc_id_to_url[val.getID()]))
+        listQuery.append((-total, doc_id_to_url[val.getID()]))
 
     count = 0
-    for val in listQuery:
-        if count == 5: break
-        print(val[1])
-        count += 1
+    listQuery = sorted(listQuery)
+    for i in range(len(listQuery)):
+        if count == 5:break
+        print(listQuery[i][1])
+        count+=1
+        
     return t_start
 
 
