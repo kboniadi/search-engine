@@ -61,7 +61,9 @@ def answerQuery():
         for val in queryTokenized:
             if val in bookKeeping:
                 f.seek(bookKeeping[val])
-                getPosting = f.readline()[1:-1].split(",")
+                x = f.readline()
+                print(x)
+                getPosting = x[1:-1].split(",")
                 getPosting = getPosting[1].split("|")
                 for i in range(1,len(getPosting),2):
                     rankingScores[int(getPosting[i-1])] += (1 + math.log10(int(getPosting[i])))*(math.log10(doc_id/(len(getPosting)//2)))
