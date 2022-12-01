@@ -10,6 +10,7 @@ from time import perf_counter
 from bs4 import BeautifulSoup
 from nltk.stem import PorterStemmer
 
+import mrjob
 from mrjob.job import MRJob
 from mrjob.step import MRStep
 import csv
@@ -30,16 +31,18 @@ bookKeeping = defaultdict(int)
 
 offset = 0
 class MergeIndex(MRJob):
-
+   OUTPUT_PROTOCOL = mrjob.protocol.JSONValueProtocol
    def mapper(self, _, line):
-       global offset
        key, value = line.split(",")
-       bookKeeping[key] = offset
-       offset += len(line)+2
        yield key, value
 
    def reducer(self, key, values):
-      return None
+      global offset
+      values = "".join(str(v) for v in values)
+      ret = key + "," + values
+      bookKeeping[key] = offset
+      offset += len(ret)+3
+      yield None,ret
 
 
 
@@ -53,15 +56,12 @@ def answerQuery():
     queryTokenized = tokenize(query, True)
     
 
-   
-
     rankingScores = defaultdict(float)
-
-    with open("out.txt", "r") as f:
+    with open("out1.txt", "r") as f:
         for val in queryTokenized:
             if val in bookKeeping:
                 f.seek(bookKeeping[val])
-                getPosting = f.readline().split(",")
+                getPosting = f.readline()[1:-1].split(",")
                 getPosting = getPosting[1].split("|")
                 for i in range(1,len(getPosting),2):
                     rankingScores[int(getPosting[i-1])] += (1 + math.log10(int(getPosting[i])))*(math.log10(doc_id/(len(getPosting)//2)))
@@ -69,12 +69,11 @@ def answerQuery():
     rankingScores = sorted(rankingScores, key = lambda x: -x)
 
     count = 0
-    GetTime = t_start                                                                                   
     for val in rankingScores:
        if count == 5: break
        print(doc_id_to_url[val])
        count += 1                                                                                
-    return GetTime
+    return t_start 
 
 def build_index(root_dir: str) -> None:
     global doc_id
@@ -199,6 +198,7 @@ def merge_files():
                    
 
     MergeIndex.run()
+
  
 
 def main():
