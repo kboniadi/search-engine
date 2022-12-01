@@ -1,3 +1,4 @@
+import csv
 import json
 import math
 import os
@@ -7,16 +8,13 @@ import sys
 from collections import defaultdict
 from time import perf_counter
 
-from bs4 import BeautifulSoup
-from nltk.stem import PorterStemmer
-
 import mrjob
+from bs4 import BeautifulSoup
 from mrjob.job import MRJob
 from mrjob.step import MRStep
-import csv
+from nltk.stem import PorterStemmer
 
-
-DATA_URLS = "ANALYST"
+DATA_URLS = "DEV"
 STORAGE = "storage"
 MAX_SIZE = 5000000 #5MB 
 
