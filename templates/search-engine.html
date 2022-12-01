@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+	{% for message in get_flashed_messages() %}
+		
+		<div class="alert alert-warning alert-dismissible fade show" role="alert">
+			{{ message }}
+			<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+		</div>
+	{% endfor %}
+
+    <center>
+    <div class="logo h1">
+        Fast Search
+    </div>
+    
+    <form method="POST">
+        <div class="bar">
+            <i class="fa-regular fa-magnifying-glass"></i>
+            <input class="searchbar" type="text" title="Search" id="search" name="search">
+        </div>
+        <div class="buttons">
+            <button class="button" type="submit">Search</button>
+        </div>
+    </form>
+        
+{% endblock %}

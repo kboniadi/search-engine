@@ -1,32 +1,77 @@
-import heapq
+import csv
 import json
 import math
 import os
 import pickle
 import re
 import sys
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 from time import perf_counter
-from typing import Dict, List
 
+import mrjob
 from bs4 import BeautifulSoup
+from mrjob.job import MRJob
+from mrjob.step import MRStep
 from nltk.stem import PorterStemmer
-
-from posting import Posting
 
 DATA_URLS = "DEV"
 STORAGE = "storage"
-MAX_SIZE = 5000000 #5MB
+MAX_SIZE = 5000000 #5MB 
 
 disk_index = 0
 doc_id = 0
 doc_id_to_url = {}
 stemmer = PorterStemmer()
 
-index: Dict[str, List[Posting]] = defaultdict(list)
-tempIndex: Dict[str, List[Posting]] = defaultdict(list)
-outFile = open("out.txt", "w")
+index = defaultdict(str)
+tempIndex = defaultdict(str)
+bookKeeping = defaultdict(int)
 
+class MergeIndex(MRJob):
+   OUTPUT_PROTOCOL = mrjob.protocol.JSONValueProtocol
+   def mapper(self, _, line):
+       key, value = line.split(",")
+       yield key, value
+
+   def reducer(self, key, values):
+      values = "".join(str(v) for v in values)
+      ret = key + "," + values
+      yield None,ret
+
+
+
+
+#milestone #2
+def answerQuery():
+    global doc_id
+    query = input("Enter in a query: ")
+    print("Processing...\n")
+    t_start = perf_counter()
+    queryTokenized = tokenize(query, True)
+    
+
+    rankingScores = defaultdict(float)
+    with open("out1.txt", "r") as f:
+        for val in queryTokenized:
+            if val in bookKeeping:
+                try:
+                   f.seek(bookKeeping[val])
+                   x = f.readline()
+                   print(x)
+                   getPosting = x[1:-1].split(",")
+                   getPosting = getPosting[1].split("|")
+                   for i in range(1,len(getPosting),2):
+                       rankingScores[int(getPosting[i-1])] += (1 + math.log10(int(getPosting[i])))*(math.log10(doc_id/(len(getPosting)//2)))
+                except:
+                   print("failed bruh")
+    rankingScores = sorted(rankingScores, key = lambda x: -rankingScores[x])
+
+    count = 0
+    for val in rankingScores:
+       if count == 5: break
+       print(doc_id_to_url[val])
+       count += 1                                                                                
+    return t_start 
 
 def build_index(root_dir: str) -> None:
     global doc_id
@@ -46,7 +91,7 @@ def build_index(root_dir: str) -> None:
             soup = BeautifulSoup(data_content, "lxml")
 
             # tokenize here
-            tokens = tokenize(soup.get_text())
+            tokens = tokenize(soup.get_text(), False)
             # add frequencies
             add_meta_data(doc_id, tokens)
 
@@ -54,6 +99,7 @@ def build_index(root_dir: str) -> None:
                 offload_index()
             doc_id += 1
 
+    #offloading the remaining index
     offload_index()
 
     file_name = f"storage/url_map/urls.pickle"
@@ -62,20 +108,27 @@ def build_index(root_dir: str) -> None:
     with open(file_name, "wb") as f:
         pickle.dump(doc_id_to_url, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-def tokenize(text_content: str) -> Dict[str, int]:
-    ret = defaultdict(int)
 
+def tokenize(text_content, askingQuery):
+    ret = defaultdict(int)
+    queryget = []
     for token in re.findall(r'[a-zA-Z0-9]+', text_content.lower()):
         token = stemmer.stem(token)
 
-        if not token:
-            print("empty")
-        ret[token] += 1
-    return ret
+        if not askingQuery:
+            if not token:
+                print("empty")
+            # add book keeper secondary index
+            ret[token] += 1
+        else:
+            queryget.append(token)
+    return ret if not askingQuery else queryget
 
-def add_meta_data(doc_id: int, tokens: Dict[str, int]) -> None:
-    for token, freq in tokens.items():
-        heapq.heappush(index[token], Posting(doc_id, freq))
+
+def add_meta_data(doc_id, tokens):
+    for token, data in tokens.items():
+        index[token] += str(doc_id) +"|" +str(data)+"|"
+
 
 def offload_index() -> None:
     global index
@@ -85,18 +138,20 @@ def offload_index() -> None:
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
     with open(file_name, "wb") as f:
-        pickle.dump(OrderedDict(sorted(index.items())), f, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(index, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     index.clear()
     disk_index += 1
 
 # analysis question #1
 def number_of_indexed() -> int:
+    global doc_id
+
     return doc_id
 
 # analysis question #2
 def unique_tokens() -> int:
-    return len(index)
+    return len(bookKeeping)
 
 # analysis question #3: The total size (in KB) of your index on disk
 def get_index_size(root_dir: str) -> str:
@@ -125,75 +180,61 @@ def convert_size(size_bytes, unit="B"):
 
 def merge_files():
     global index
-    global tempIndex
+    global tempIndex  
+    
 
-    #loading the first file
-    with open('storage/partial_index0.pickle', 'rb') as f:
-        index = pickle.load(f)  # Update contents of file0 to the dictionary
 
-    #goint thru all the files
-    for i in range(1, disk_index):
-        with open(f'storage/partial_index{i}.pickle', 'rb') as f:
-            tempIndex = pickle.load(f)  #getting the temp file
 
-            for key, value in tempIndex.items():
-                if(key in index):
-                    for j in value:
-                        heapq.heappush(index[key], j)  #Update contents of file1 to the dictionary
-                else:
-                    index[key] = value
+    with open("out.txt", "w") as f:
+        
+       
+        for i in range(disk_index):
+            with open(f'storage/partial_index{i}.pickle', 'rb') as f1:
+                tempIndex = pickle.load(f1)  #getting the temp file
+                for key, value in tempIndex.items():
+                   f.write(key + "," + value + "\n")
+                   
 
-    # file_name = f"storage/index.pickle"
-    # os.makedirs(os.path.dirname(file_name), exist_ok=True)
-    #
-    # with open(file_name, "wb") as f:
-    #     pickle.dump(index, f, protocol=pickle.HIGHEST_PROTOCOL)
+    MergeIndex.run()
 
-    for k, v in index.items():
-        outFile.write(k + " - " + str(len(v)) + '\n')
+    offset = 0
+    with open("out1.txt", "r") as f:
+       while True:
+          x = f.readline()
+          if not x: break
+          term = x[1:-1].split(",")
+          bookKeeping[term[0]] = offset
+          offset += len(x)
+          
+
+ 
 
 def main():
+    
     t_start = perf_counter()
+    build_index(DATA_URLS)
+    merge_files()
 
-    # build_index(DATA_URLS)
-    # merge_files()
-    # print("Number of indexed: " + str(number_of_indexed()) + '\n')
-    # print("Unique Tokens: " + str(unique_tokens()) + '\n')
-    # print("Index size: " + str(get_index_size(STORAGE)) + '\n')
-    
-    # file_name = f"storage/partial_index{0}.pickle"
-    # os.makedirs(os.path.dirname(file_name), exist_ok=True)
+    file_name = f"storage/book-keeper/book-keeping.pickle"
+    os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
-    # with open(file_name, "rb") as f:
-    #     index: Dict[str, List[Posting]] = defaultdict(list, pickle.load(f))
-
-    # file_name = f"storage/url_map/urls.pickle"
-    # os.makedirs(os.path.dirname(file_name), exist_ok=True)
-
-    # with open(file_name, "rb") as f:
-    #     doc_id_to_url: Dict[int, str] = defaultdict(str, pickle.load(f))
-
-    # print(len(index["uci"]))
-    # print(doc_id_to_url[2])
-    # for posting in index["uci"]:
-    #     if posting.docid == 2:
-    #         print(posting.tfidf)
-    
-    ''' example code for ordered dict serialization
-    dict1 = {"z": 1, "b": 3, "a": 1, "as": 2, "bb": 1, "asdf": 1, "xcv": 1}
-
-    with open("tmp.pickel", "wb") as f:
-        pickle.dump(OrderedDict(sorted(dict1.items())), f, protocol=pickle.HIGHEST_PROTOCOL)
-    
-    with open("tmp.pickel", "rb") as f:
-        tmp = dict(pickle.load(f)) 
-    
-    print(dict1)
-    print(tmp)
-    '''
+    with open(file_name, "wb") as f:
+        pickle.dump(bookKeeping, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     t_end = perf_counter()
-    print(t_end - t_start)
+    print("Build took:", t_end-t_start)
+    
+    print("Number of indexed: " + str(number_of_indexed()) + '\n')
+    print("Unique Tokens: " + str(unique_tokens()) + '\n')
+    print("Index size: " + str(get_index_size(STORAGE)) + '\n')
+    
+
+    # while True:
+    #     input1 = input("Get query? (Y/N): ")
+    #     if input1 == "N": return
+    #     t_start = answerQuery()
+    #     t_end = perf_counter()
+    #     print("Time took:", t_end - t_start)
 
 if __name__ == "__main__":
     main()
