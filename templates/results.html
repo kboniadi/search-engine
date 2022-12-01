@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+	{% for message in get_flashed_messages() %}
+		
+		<div class="alert alert-warning alert-dismissible fade show" role="alert">
+			{{ message }}
+			<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+		</div>
+
+
+	{% endfor %}
+
+	<header>
+        <div class="h4 mt-4">FastSearch</div>
+    </header>
+    <div class="search">
+        Results for <strong> {{ keyterm }} </strong> returned in about <strong> {{ delay }} </strong> seconds
+    </div>
+    
+    <div class="mt-4">
+        <div class="list-group">
+            {% for s in sites %}
+                <a href="{{s}}" class="list-group-item list-group-item-action" target="_blank">{{s}}</a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a class="btn btn-primary" href="{{ url_for('home')}}">back</a>
+    </div>
+
+{% endblock %}
