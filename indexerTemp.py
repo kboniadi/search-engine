@@ -29,7 +29,6 @@ index = defaultdict(str)
 tempIndex = defaultdict(str)
 bookKeeping = defaultdict(int)
 
-offset = 0
 class MergeIndex(MRJob):
    OUTPUT_PROTOCOL = mrjob.protocol.JSONValueProtocol
    def mapper(self, _, line):
@@ -37,11 +36,8 @@ class MergeIndex(MRJob):
        yield key, value
 
    def reducer(self, key, values):
-      global offset
       values = "".join(str(v) for v in values)
       ret = key + "," + values
-      bookKeeping[key] = offset
-      offset += len(ret)+3
       yield None,ret
 
 
@@ -202,6 +198,16 @@ def merge_files():
                    
 
     MergeIndex.run()
+
+    offset = 0
+    with open("out1.txt", "r") as f:
+       while True:
+          x = f.readline()
+          if not x: break
+          term = x[1:-1].split(",")
+          bookKeeping[term[0]] = offset
+          offset += len(x)
+          
 
  
 
