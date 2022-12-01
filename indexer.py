@@ -14,7 +14,7 @@ from mrjob.job import MRJob
 from mrjob.step import MRStep
 from nltk.stem import PorterStemmer
 
-DATA_URLS = "DEV"
+DATA_URLS = "ANALYST"
 STORAGE = "storage"
 MAX_SIZE = 5000000 #5MB 
 
@@ -89,6 +89,35 @@ def build_index(root_dir: str) -> None:
             doc_id_to_url[doc_id] = data_url
 
             soup = BeautifulSoup(data_content, "lxml")
+
+            #important words
+            impF = open("imp.txt", "a")
+
+            impStr = ""
+
+            for a in ["h1", "h2", "h3", "title", "strong", "b"]:
+                for words in soup.find_all(a):
+                    # impF.write(str(words) + ' - ')
+                    # impF.write(words.text)
+                    impStr = impStr + words.text + " "
+                    # impF.write('\n')
+
+
+            impTokens = []
+
+            if impStr != "":
+                impTokens = tokenize(impStr, False)
+
+            impF.write(str(doc_id) + '\n\n')
+            for imp in impTokens:
+                impF.write(imp)
+                impF.write('\n')
+
+            impF.write('\n')
+            impF.write('\n')
+
+            impF.close()
+
 
             # tokenize here
             tokens = tokenize(soup.get_text(), False)
