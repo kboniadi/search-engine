@@ -16,9 +16,9 @@ from mrjob.step import MRStep
 import csv
 
 
-DATA_URLS = "DEV"
+DATA_URLS = "ANALYST"
 STORAGE = "storage"
-MAX_SIZE = 5000000 #5MB
+MAX_SIZE = 5000000 #5MB 
 
 disk_index = 0
 doc_id = 0
@@ -60,15 +60,17 @@ def answerQuery():
     with open("out1.txt", "r") as f:
         for val in queryTokenized:
             if val in bookKeeping:
-                f.seek(bookKeeping[val])
-                x = f.readline()
-                print(x)
-                getPosting = x[1:-1].split(",")
-                getPosting = getPosting[1].split("|")
-                for i in range(1,len(getPosting),2):
-                    rankingScores[int(getPosting[i-1])] += (1 + math.log10(int(getPosting[i])))*(math.log10(doc_id/(len(getPosting)//2)))
-
-    rankingScores = sorted(rankingScores, key = lambda x: -x)
+                try:
+                   f.seek(bookKeeping[val])
+                   x = f.readline()
+                   print(x)
+                   getPosting = x[1:-1].split(",")
+                   getPosting = getPosting[1].split("|")
+                   for i in range(1,len(getPosting),2):
+                       rankingScores[int(getPosting[i-1])] += (1 + math.log10(int(getPosting[i])))*(math.log10(doc_id/(len(getPosting)//2)))
+                except:
+                   print("failed bruh")
+    rankingScores = sorted(rankingScores, key = lambda x: -rankingScores[x])
 
     count = 0
     for val in rankingScores:
