@@ -14,7 +14,7 @@ from mrjob.job import MRJob
 from mrjob.step import MRStep
 from nltk.stem import PorterStemmer
 
-DATA_URLS = "ANALYST"
+DATA_URLS = "DEV"
 STORAGE = "storage"
 MAX_SIZE = 5000000 #5MB 
 

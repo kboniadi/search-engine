@@ -40,10 +40,17 @@ class Search:
                         x = f.readline()
                         get_posting = x[1:-1].split(",")
                         get_posting = get_posting[1].split("|")
-                        for i in range(1,len(get_posting),2):
-                            ranking_scores[int(get_posting[i-1])] += (1 + math.log10(int(get_posting[i])))*(math.log10(self.doc_id/(len(get_posting)//2)))
+
+                        for i in range(1,len(get_posting)-1,3):
+                            scale = 1
+
+                            if int(get_posting[i+1]) == 1:
+                                scale = 2
+
+                            ranking_scores[int(get_posting[i-1])] += (1 + math.log10(int(get_posting[i])))*(math.log10(self.doc_id/(len(get_posting)//3))) * scale
                     except:
-                        print("failed bruh")
+                        print("query failed")
+
         ranking_scores = sorted(ranking_scores, key = lambda x: -ranking_scores[x])
 
         count = 0
@@ -51,8 +58,9 @@ class Search:
         for val in ranking_scores:
             if count == 5: break
             ret.append(self.doc_id_to_url[val])
+            # print(ranking_scores[val])
             count += 1
-        return ret                                                                         
+        return ret
 
 
     def document_retrieval(self, query_list: List[str]):
