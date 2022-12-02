@@ -90,10 +90,36 @@ def build_index(root_dir: str) -> None:
 
             soup = BeautifulSoup(data_content, "lxml")
 
+            #important words
+            impF = open("imp.txt", "a")
+
+            impStr = ""
+
+            for a in ["h1", "h2", "h3", "title", "strong", "b"]:
+                for words in soup.find_all(a):
+                    impStr = impStr + words.text + " "
+
+
+            impTokens = []
+
+            if impStr != "":
+                impTokens = tokenize(impStr, False)
+
+            # impF.write(str(doc_id) + '\n\n')
+            # for imp in impTokens:
+            #     impF.write(imp)
+            #     impF.write('\n')
+            #
+            # impF.write('\n')
+            # impF.write('\n')
+            #
+            # impF.close()
+
+
             # tokenize here
             tokens = tokenize(soup.get_text(), False)
             # add frequencies
-            add_meta_data(doc_id, tokens)
+            add_meta_data(doc_id, tokens, impTokens)
 
             if(sys.getsizeof(index) > MAX_SIZE):
                 offload_index()
@@ -125,9 +151,12 @@ def tokenize(text_content, askingQuery):
     return ret if not askingQuery else queryget
 
 
-def add_meta_data(doc_id, tokens):
+def add_meta_data(doc_id, tokens, impTokens):
     for token, data in tokens.items():
-        index[token] += str(doc_id) +"|" +str(data)+"|"
+        isImp = 0
+        if token in impTokens:
+            isImp = 1
+        index[token] += str(doc_id) +"|" +str(data)+"|" + str(isImp) + "|"
 
 
 def offload_index() -> None:
