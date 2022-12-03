@@ -175,7 +175,6 @@ def offload_index() -> None:
 # analysis question #1
 def number_of_indexed() -> int:
     global doc_id
-
     return doc_id
 
 # analysis question #2
@@ -211,12 +210,7 @@ def merge_files():
     global index
     global tempIndex  
     
-
-
-
     with open("out.txt", "w") as f:
-        
-       
         for i in range(disk_index):
             with open(f'storage/partial_index{i}.pickle', 'rb') as f1:
                 tempIndex = pickle.load(f1)  #getting the temp file
@@ -234,9 +228,7 @@ def merge_files():
           term = x[1:-1].split(",")
           bookKeeping[term[0]] = offset
           offset += len(x)
-          
 
- 
 
 def main():
     
@@ -256,14 +248,6 @@ def main():
     print("Number of indexed: " + str(number_of_indexed()) + '\n')
     print("Unique Tokens: " + str(unique_tokens()) + '\n')
     print("Index size: " + str(get_index_size(STORAGE)) + '\n')
-    
-
-    # while True:
-    #     input1 = input("Get query? (Y/N): ")
-    #     if input1 == "N": return
-    #     t_start = answerQuery()
-    #     t_end = perf_counter()
-    #     print("Time took:", t_end - t_start)
 
 if __name__ == "__main__":
     main()
