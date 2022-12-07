@@ -38,41 +38,6 @@ class MergeIndex(MRJob):
       ret = key + "," + values
       yield None,ret
 
-
-
-
-#milestone #2
-def answerQuery():
-    global doc_id
-    query = input("Enter in a query: ")
-    print("Processing...\n")
-    t_start = perf_counter()
-    queryTokenized = tokenize(query, True)
-    
-
-    rankingScores = defaultdict(float)
-    with open("out1.txt", "r") as f:
-        for val in queryTokenized:
-            if val in bookKeeping:
-                try:
-                   f.seek(bookKeeping[val])
-                   x = f.readline()
-                   print(x)
-                   getPosting = x[1:-1].split(",")
-                   getPosting = getPosting[1].split("|")
-                   for i in range(1,len(getPosting),2):
-                       rankingScores[int(getPosting[i-1])] += (1 + math.log10(int(getPosting[i])))*(math.log10(doc_id/(len(getPosting)//2)))
-                except:
-                   print("failed bruh")
-    rankingScores = sorted(rankingScores, key = lambda x: -rankingScores[x])
-
-    count = 0
-    for val in rankingScores:
-       if count == 5: break
-       print(doc_id_to_url[val])
-       count += 1                                                                                
-    return t_start 
-
 def build_index(root_dir: str) -> None:
     global doc_id
     global doc_id_to_url
